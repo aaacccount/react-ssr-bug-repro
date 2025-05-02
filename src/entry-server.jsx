@@ -1,5 +1,5 @@
-import {renderToPipeableStream} from "react-dom/server";
-import App from "./App";
+import { renderToPipeableStream } from 'react-dom/server';
+import App from './App';
 
 export function render(writeable, handleError, id) {
   const { pipe, _abort } = renderToPipeableStream(
@@ -8,18 +8,12 @@ export function render(writeable, handleError, id) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>React SSR Bug Repro</title>
-        
       </head>
       <body>
-      <template id="suspenseId" data-suspense-id={id}/>
-      <div id="root"><App suspenseId={id}/></div>
-      {/* <script type="module" async={true} dangerouslySetInnerHTML={{__html: `import RefreshRuntime from 'http://localhost:8080/@react-refresh'
-  RefreshRuntime.injectIntoGlobalHook(window)
-  window.$RefreshReg$ = () => {}
-  window.$RefreshSig$ = () => (type) => type
-  debugger
-  window.__vite_plugin_react_preamble_installed__ = true`}}>
-</script> */}
+        <template id="suspenseId" data-suspense-id={id} />
+        <div id="root">
+          <App suspenseId={id} />
+        </div>
       </body>
     </html>,
     {

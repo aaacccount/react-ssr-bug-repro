@@ -4,10 +4,7 @@ import { Transform as TransformStream } from 'node:stream';
 
 const app = express();
 const vite = await createViteServer({
-  server: {
-    middlewareMode: true,
-    hmr: false,
-  },
+  server: { middlewareMode: true },
   appType: 'custom',
 });
 app.use(vite.middlewares);
@@ -17,22 +14,36 @@ class ViteTransformStream extends TransformStream {
   _receivedFirstChunk = false;
 
   constructor(response, url) {
-    super({decodeStrings: false});
+    super({ decodeStrings: false });
     this.response = response;
     this.url = url;
   }
 
+  _makeAllScriptsAsync(content) {
+    return content.replaceAll(
+      '<script type="module"',
+      '<script type="module" async'
+    );
+  }
+
   _transform(chunk, _encoding, callback) {
     if (this._receivedFirstChunk) {
-      callback(null, chunk);
+      callback(null, this._makeAllScriptsAsync(chunk.toString('utf-8')));
     } else {
       this._receivedFirstChunk = true;
       this.response.statusCode = 200;
-      this.response.setHeader("content-type", "text/html");
-      vite.transformIndexHtml(this.url, chunk.toString('utf-8') + FAKE_END)
-        .then(transformedChunk => {
-          callback(null, transformedChunk.slice(0, FAKE_END.length * -1));
-      });
+      this.response.setHeader('content-type', 'text/html');
+      vite
+        .transformIndexHtml(this.url, chunk.toString('utf-8') + FAKE_END)
+        .then((transformedChunk) => {
+          callback(
+            null,
+            this._makeAllScriptsAsync(transformedChunk).slice(
+              0,
+              FAKE_END.length * -1
+            )
+          );
+        });
     }
   }
 }
@@ -42,13 +53,16 @@ app.use(async (request, response, next) => {
   function handleError(err) {
     console.log('err', err);
     response.setHeader('content-type', 'text/html');
-    response.send('<h1>Something went wrong</h1>'); 
-    vite.ssrFixStacktrace(err)
+    response.send('<h1>Something went wrong</h1>');
+    vite.ssrFixStacktrace(err);
     next(err);
   }
   try {
-    const {render} = (await vite.ssrLoadModule('/src/entry-server.jsx'));
-    const transformStream = new ViteTransformStream(response, request.originalUrl);
+    const { render } = await vite.ssrLoadModule('/src/entry-server.jsx');
+    const transformStream = new ViteTransformStream(
+      response,
+      request.originalUrl
+    );
     transformStream.pipe(response);
     render(transformStream, handleError, suspenseIdCounter++, response);
   } catch (err) {

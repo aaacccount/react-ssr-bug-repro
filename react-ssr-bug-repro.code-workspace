@@ -5,6 +5,12 @@
 		}
 	],
 	"settings": {
-		"explorer.excludeGitIgnore": false
+		"explorer.excludeGitIgnore": false,
+		"prettier.singleQuote": true,
+		"typescript.format.enable": false,
+		"javascript.format.enable": false,
+		"[javascriptreact]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		}
 	}
 }
